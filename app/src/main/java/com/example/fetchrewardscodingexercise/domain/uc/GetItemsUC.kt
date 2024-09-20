@@ -10,7 +10,7 @@ class GetItemsUC @Inject constructor(
     private val fetchRewardsApi: FetchRewardsApi // Injecting the FetchRewardsApi using DI
 ) {
 
-    suspend operator fun invoke(): Flow<List<Item>> = flow {
+    suspend operator fun invoke() = flow {
 
         val dtoItems = fetchRewardsApi.getItems()
 

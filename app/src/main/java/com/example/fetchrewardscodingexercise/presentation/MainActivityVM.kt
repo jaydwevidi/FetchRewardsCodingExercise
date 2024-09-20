@@ -6,6 +6,7 @@ import com.example.fetchrewardscodingexercise.data.models.Item
 import com.example.fetchrewardscodingexercise.domain.uc.GetItemsUC
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -15,66 +16,69 @@ sealed class UserAction {
     object Refresh : UserAction()
 }
 
+sealed class MainScreenState {
+    data object Loading : MainScreenState()
+    data class Success(val items: List<Item>, val filterText: String) : MainScreenState()
+    data class Error(val message: String) : MainScreenState()
+}
+
+interface MainActivityVMInterface {
+    val state: StateFlow<MainScreenState>
+    fun handleUserAction(userAction: UserAction)
+}
+
 @HiltViewModel
 class MainActivityVM @Inject constructor(
     private val getItemsUC: GetItemsUC
-) : ViewModel() {
+) : ViewModel(), MainActivityVMInterface {
 
     private val _state = MutableStateFlow<MainScreenState>(MainScreenState.Loading)
-    val state = _state.asStateFlow()
-
-    private val _filterText = MutableStateFlow("")
-    val filterText = _filterText.asStateFlow()
+    override val state: StateFlow<MainScreenState> = _state.asStateFlow()
 
     private var allItems: List<Item> = emptyList()
 
     init {
         fetchItems()
-        viewModelScope.launch {
-            _filterText.collect {
-                applyFilter()
-            }
-        }
     }
 
     private fun fetchItems() {
         viewModelScope.launch {
-            getItemsUC.invoke().collect { items ->
-                allItems = items
-                applyFilter()
+            try {
+                getItemsUC.invoke().collect { items ->
+                    allItems = items
+                    _state.value = MainScreenState.Success(items, "")
+                }
+            } catch (e: Exception) {
+                _state.value = MainScreenState.Error(e.message ?: "Unknown error")
             }
         }
     }
 
-    private fun applyFilter() {
-        val filteredItems = if (_filterText.value.isEmpty()) {
-            allItems
-        } else {
-            allItems.filter {
-                it.name.contains(_filterText.value, ignoreCase = true) ||
-                        it.id.toString().contains(_filterText.value) ||
-                        it.listId.toString().contains(_filterText.value)
-            }
-        }
-        _state.value = MainScreenState.Success(filteredItems)
-    }
-
-    fun handleUserAction(userAction: UserAction) {
+    override fun handleUserAction(userAction: UserAction) {
         when (userAction) {
-            is UserAction.Filter -> {
-                _filterText.value = userAction.filterText
-            }
-            is UserAction.Refresh -> {
-                _state.value = MainScreenState.Loading
-                fetchItems()
-                
-            }
+            is UserAction.Filter -> applyFilter(userAction.filterText)
+            is UserAction.Refresh -> refreshItems()
         }
     }
-}
 
-sealed class MainScreenState {
-    data class Success(val data: List<Item>) : MainScreenState()
-    data class Error(val message: String) : MainScreenState()
-    object Loading : MainScreenState()
+    private fun applyFilter(filterText: String) {
+        val currentState = _state.value
+        if (currentState is MainScreenState.Success) {
+            val filteredItems = if (filterText.isEmpty()) {
+                allItems
+            } else {
+                allItems.filter { item ->
+                    item.name.contains(filterText, ignoreCase = true) ||
+                            item.id.toString().contains(filterText) ||
+                            item.listId.toString().contains(filterText)
+                }
+            }
+            _state.value = MainScreenState.Success(filteredItems, filterText)
+        }
+    }
+
+    private fun refreshItems() {
+        _state.value = MainScreenState.Loading
+        fetchItems()
+    }
 }

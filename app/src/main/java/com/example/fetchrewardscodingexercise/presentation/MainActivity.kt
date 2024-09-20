@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -32,6 +33,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,8 +52,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             FetchRewardsCodingExerciseTheme {
-                val state = mainActivityVM.state.collectAsState()
-                val filterText = mainActivityVM.filterText.collectAsState()
+                val state by mainActivityVM.state.collectAsState()
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -71,22 +72,24 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 ) { innerPadding ->
-                    Column(modifier = Modifier.padding(innerPadding)) {
-                        FilterTextField(
-                            filterText = filterText.value,
-                            onFilterTextChanged = { newText ->
-                                mainActivityVM.handleUserAction(UserAction.Filter(newText))
-                            }
-                        )
-                        when (val currentState = state.value) {
-                            is MainScreenState.Error -> {
-                                ErrorScreen(message = currentState.message)
-                            }
-                            is MainScreenState.Loading -> {
-                                LoadingScreen()
-                            }
-                            is MainScreenState.Success -> {
-                                ItemList(items = currentState.data)
+                    when (val currentState = state) {
+                        is MainScreenState.Loading -> {
+                            LoadingScreen()
+                        }
+                        is MainScreenState.Error -> {
+                            ErrorScreen(message = currentState.message)
+                        }
+                        is MainScreenState.Success -> {
+                            Column(modifier = Modifier.padding(innerPadding)) {
+                                FilterTextField(
+                                    filterText = currentState.filterText,
+                                    onFilterTextChanged = { newText ->
+                                        mainActivityVM.handleUserAction(
+                                            UserAction.Filter(newText)
+                                        )
+                                    }
+                                )
+                                ItemList(items = currentState.items)
                             }
                         }
                     }
@@ -149,11 +152,8 @@ fun ErrorScreen(message: String) {
 @Composable
 fun ItemList(items: List<Item>) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items.forEach { (_, itemsInGroup) ->
-
-            items(itemsInGroup) { index ->
-                ItemRow(items[index])
-            }
+        items(items) { item ->
+            ItemRow(item)
         }
     }
 }
@@ -174,7 +174,7 @@ fun ItemRow(item: Item) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(text = item.name, style = MaterialTheme.typography.bodyLarge)
-            Text(text = "ID: ${item.id}", style = MaterialTheme.typography.bodySmall)
+            Text(text = "${item.id}", style = MaterialTheme.typography.bodySmall)
             Text(text = "List ID: ${item.listId}", style = MaterialTheme.typography.bodySmall)
         }
     }
