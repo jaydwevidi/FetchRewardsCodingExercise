@@ -1,6 +1,5 @@
 package com.example.fetchrewardscodingexercise.presentation.composable
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -30,8 +28,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.fetchrewardscodingexercise.data.models.Item
 import com.example.fetchrewardscodingexercise.presentation.MainScreenState
 
@@ -52,11 +50,7 @@ fun FilterTextField(filterText: String, onFilterTextChanged: (String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(
-            imeAction = androidx.compose.ui.text.input.ImeAction.Search,
-            keyboardType = KeyboardType.Number
-        )
+        singleLine = true
     )
 }
 
@@ -82,6 +76,7 @@ fun ItemRow(item: Item) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -165,15 +160,32 @@ fun SuccessContent(
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             groupedItems.forEach { (listId, itemsInGroup) ->
                 item {
-                    Text(
-                        text = "List ID: $listId",
-                        style = MaterialTheme.typography.headlineLarge,
+                    Card(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                            .align(Alignment.CenterHorizontally)
-                            .padding(20.dp)
-                    )
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "List ID: $listId",
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontSize = 30.sp // Adjust size to make the text bigger
+                                ),
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .align(Alignment.Center)
+                            )
+                        }
+                    }
                 }
                 items(itemsInGroup) { item ->
                     ItemRow(item)
