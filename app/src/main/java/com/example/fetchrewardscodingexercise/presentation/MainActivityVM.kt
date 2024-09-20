@@ -9,11 +9,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 
 sealed class UserAction {
     data class Filter(val filterText: String) : UserAction()
-    object Refresh : UserAction()
+    data object Refresh : UserAction()
 }
 
 sealed class MainScreenState {
@@ -44,12 +46,15 @@ class MainActivityVM @Inject constructor(
     private fun fetchItems() {
         viewModelScope.launch {
             try {
-                getItemsUC.invoke().collect { items ->
-                    allItems = items
-                    _state.value = MainScreenState.Success(items, "")
-                }
+                val items = getItemsUC()
+                allItems = items
+                _state.value = MainScreenState.Success(items, "")
+            } catch (e: IOException) {
+                _state.value = MainScreenState.Error("Network error occurred.")
+            } catch (e: HttpException) {
+                _state.value = MainScreenState.Error("Server error occurred.")
             } catch (e: Exception) {
-                _state.value = MainScreenState.Error(e.message ?: "Unknown error")
+                _state.value = MainScreenState.Error("An unexpected error occurred.")
             }
         }
     }

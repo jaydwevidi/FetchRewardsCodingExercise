@@ -12,29 +12,27 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object  FetchRewardsModule {
+object FetchRewardsModule {
+
+    private const val BASE_URL = "https://fetch-hiring.s3.amazonaws.com/"
 
     @Provides
-    fun provideGetItemsUC(fetchRewardsApi: FetchRewardsApi): GetItemsUC {
-        return GetItemsUC(fetchRewardsApi)
+    fun provideRetrofit(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
     }
 
     @Provides
     @Singleton
-    fun provideFetchRewardsApiService(): FetchRewardsApi {
+    fun provideFetchRewardsApiService(retrofit: Retrofit): FetchRewardsApi {
+        return retrofit.create(FetchRewardsApi::class.java)
+    }
 
-        val BASE_URL = "https://fetch-hiring.s3.amazonaws.com/"
-
-
-        fun getRetrofit(): Retrofit {
-            return Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-        }
-
-        val apiService: FetchRewardsApi = getRetrofit().create(FetchRewardsApi::class.java)
-        return apiService
-
+    @Provides
+    @Singleton
+    fun provideGetItemsUC(fetchRewardsApi: FetchRewardsApi): GetItemsUC {
+        return GetItemsUC(fetchRewardsApi)
     }
 }

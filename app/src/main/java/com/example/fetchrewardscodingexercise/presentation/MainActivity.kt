@@ -14,7 +14,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val mainActivityVM by viewModels<MainActivityVM>()
+    private val mainActivityVM: MainActivityVMInterface by viewModels<MainActivityVM>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
